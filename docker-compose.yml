@@ -1,0 +1,71 @@
+version: '2'
+
+services:
+  mysql:
+    image: mysql
+    env_file: dev.env
+    ports:
+      - "3306:3306"
+    expose:
+      - "3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./data/mysql_backup:/backup
+      - ./mysql/scripts:/root/scripts
+      - ./mysql/conf.d:/etc/mysql/conf.d
+      - ./mysql/initdb.d:/docker-entrypoint-initdb.d
+    networks:
+      - crawler
+
+  migrator:
+    extends:
+      file: crawler.yml
+      service: crawler
+    env_file: dev.env
+    command: tail -f /dev/null
+
+  a_crawler:
+    extends:
+      file: crawler.yml
+      service: crawler
+    env_file: dev.env
+    command: python /root/app/a_crawler.py
+
+  proxy:
+    image: golang:1.7
+    volumes:
+      - /Users/kazukgw/src:/go/src
+    working_dir: /go/src/github.com/kazukgw/py3crawler
+    command: tail -f /dev/null
+    expose:
+      - 8080
+    networks:
+      - crawler
+
+  httpserver:
+    image: golang:1.7
+    volumes:
+      - ./httpserver:/go/src/app
+    working_dir: /go/src/app
+    command: tail -f /dev/null
+    expose:
+      - 80
+    networks:
+      - crawler
+
+  httpcli:
+    image: ubuntu
+    command: tail -f /dev/null
+    networks:
+      - crawler
+
+
+volumes:
+  mysql_data:
+    driver: local
+
+
+networks:
+  crawler:
+    driver: bridge
+

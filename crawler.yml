@@ -1,0 +1,14 @@
+version: '2'
+
+services:
+  crawler:
+    image: python:3.6
+    volumes:
+      - ./data/html:/root/html
+      - ./crawler/:/root/app
+      - ./site-packages:/root/.local/lib/python3.6/site-packages
+    working_dir: /root/app
+    networks:
+      - crawler
+
+
